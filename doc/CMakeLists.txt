@@ -1,4 +1,4 @@
-find_package(Doxygen dot OPTIONAL_COMPONENTS mscgen)
+find_package(Doxygen REQUIRED dot OPTIONAL_COMPONENTS mscgen)
 
 if(DOXYGEN_FOUND)
   set(DOXY_PROJECT_NAME ${PROJECT_NAME}-doc)
