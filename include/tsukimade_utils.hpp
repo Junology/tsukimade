@@ -56,9 +56,7 @@ public:
 
     ~with_type() = default;
 
-    T& operator T() { return raw_; }
-
-    const T& operator T() const { return raw_; }
+    operator T() const { return raw_; }
 
     T& operator=(const T& val) { raw_ = val; return raw_; }
 
@@ -75,6 +73,21 @@ private:
  */
 template<size_t n, class T>
 using with_index = with_type<std::integral_constant<size_t, n>, T>;
+
+
+/*!
+ * A class with a statically constant value.
+ * It can be seen as a "singleton consisting of the given value."
+ * So, in spite of its name, it is irrelevant to Singleton Pattern explained in GoF book.
+ */
+// Want to write `template<auto x>`, which is available for C++17 or later.
+template<class T, std::decay_t<T> x>
+struct singleton_type
+{
+    using value_type = std::decay_t<T>;
+
+    static const constexpr value_type value = x;
+};
 
 } // namespace utils
 } // namespace tsukimade

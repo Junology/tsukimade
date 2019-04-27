@@ -330,10 +330,10 @@ int apply_stack(lua_State* L, F f)
  * \tparam F the type signature of the wrapped function.
  * \tparam f the wrapped function.
  */
-template<class F, typename std::decay<F>::type f>
+template<class F, std::decay_t<F> f>
 int fun_wrapper(lua_State* L)
 {
-    return apply_stack<std::decay_t<F>,utils::liftT<F,f> >(L, f);
+    return apply_stack<std::decay_t<F>,utils::singleton_type<F,f> >(L, f);
 }
 
 } // namespace tsukimade
