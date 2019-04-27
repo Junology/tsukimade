@@ -1,3 +1,14 @@
+/*!
+ * \file tsukimade.hpp
+ * \author Jun Yoshida
+ * \brief
+ *     The main header of the library "tsukimade"
+ *
+ * \copyright (c) 2019 Jun Yoshida.
+ * The project is released under MIT License.
+ * \date April 27, 2019: created
+ */
+
 #ifndef TSUKIMADE_MAIN_HEADER
 #define TSUKIMADE_MAIN_HEADER
 

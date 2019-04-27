@@ -1,3 +1,14 @@
+/*!
+ * \file tsukimade_utils.hpp
+ * \author Jun Yoshida
+ * \brief
+ *     This header contains several utility tools for types.
+ *
+ * \copyright (c) 2019 Jun Yoshida.
+ * The project is released under MIT License.
+ * \date April 27, 2019: created
+ */
+
 #ifndef TSUKIMADE_UTILITY_HEADER
 #define TSUKIMADE_UTILITY_HEADER
 
