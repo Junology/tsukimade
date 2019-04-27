@@ -18,7 +18,9 @@ To build documents, type
 or something like this on your shell.
 
 The command above also builds a test program provided the following packages are found:
+
 - pkg-config
 - liblua5.2-dev
+
 Note that the source codes for tests, which are written in C, C++, and Lua, include some examples of the usage of the library.
 
