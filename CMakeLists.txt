@@ -23,7 +23,7 @@ set(CMAKE_C_STANDARD ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 
-## Add directory
+## Add directories
 include_directories(${PROJECT_INCLUDE_DIR})
 
 add_subdirectory(test)
