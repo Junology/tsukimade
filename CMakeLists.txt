@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.3.0)
 project(tsukimade)
 
 set(PROJECT_LUA lua5.2)
-set(PROJECT_VERSION 0.1)
+set(PROJECT_VERSION 0.2)
 set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 set(PROJECT_TEST_DIR ${CMAKE_SOURCE_DIR}/test)
 
