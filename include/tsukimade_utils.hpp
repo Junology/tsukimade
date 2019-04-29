@@ -41,6 +41,44 @@ struct function_signature<R(*)(Args...)>
 
 
 /*!
+ * Remove all const/volatile qualifiers appearing in a type.
+ * In other words, this applies std::remove_cv recursively.
+ */
+template<class T>
+struct annihilate_cv
+{
+    using type = T;
+};
+
+template<class T>
+struct annihilate_cv<T const>
+{
+    using type = typename annihilate_cv<T>::type;
+};
+
+template<class T>
+struct annihilate_cv<T volatile>
+{
+    using type = typename annihilate_cv<T>::type;
+};
+
+template<class T>
+struct annihilate_cv<T*>
+{
+    using type = typename annihilate_cv<T>::type;
+};
+
+template<class T>
+struct annihilate_cv<T&>
+{
+    using type = typename annihilate_cv<T>::type;
+};
+
+template<class T>
+using annihilate_cv_t = typename annihilate_cv<T>::type;
+
+
+/*!
  * A class to represent a class with decoration.
  * It can be casted to the original type.
  * \tparam D A class decorating the original type.

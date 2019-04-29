@@ -108,17 +108,14 @@ struct type_utility {
 
     static const char* tname()
     {
-        return typeid(T).name();
+        return typeid(utils::annihilate_cv_t<T>).name();
     }
 
     static target_type to(lua_State* L, int i) {
         target_type* retpp
-            = static_cast<target_type*>(luaL_testudata(L, i, tname()));
+            = static_cast<target_type*>(luaL_checkudata(L, i, tname()));
 
-        if (retpp)
-            return (*retpp);
-        else
-            throw std::bad_cast{};
+        return (*retpp);
     }
 
     static void push(lua_State* L, target_type data) {
@@ -197,8 +194,7 @@ public:
     {
         m_Lstate = L;
 
-        if(lua_type(m_Lstate, i) != LUA_TFUNCTION)
-            throw std::bad_cast{};
+        luaL_checktype(m_Lstate, i, LUA_TFUNCTION);
 
         lua_pushvalue(m_Lstate, i);
         m_reg_idx = luaL_ref(m_Lstate, LUA_REGISTRYINDEX);
@@ -242,6 +238,7 @@ public:
                 (type_utility<Args>::push(m_Lstate, std::forward<Args>(args)),0)
                 ...
             };
+            static_cast<void>(dummy);
 
             if (lua_pcall(m_Lstate, sizeof...(Args), LUA_MULTRET, 0)) {
                 std::cerr << lua_tostring(m_Lstate, -1) << std::endl;
@@ -265,8 +262,8 @@ public:
             lua_rawgeti(m_Lstate, LUA_REGISTRYINDEX, m_reg_idx);
             auto dummy = {
                 (type_utility<Args>::push(m_Lstate, std::forward<Args>(args)),0)
-                ...
-            };
+                ... };
+            static_cast<void>(dummy);
 
             if (lua_pcall(m_Lstate, sizeof...(Args), LUA_MULTRET, 0)) {
                 std::cerr << lua_tostring(m_Lstate, -1) << std::endl;
@@ -305,6 +302,9 @@ auto apply_stack_impl(
             std::tuple_element_t<idx,arg_tuple_t>,
             utils::with_index<idx, D> >(L, idx+1)
         ...);
+    // In case the argmentlist is empty, arg_tup may not be used.
+    static_cast<void>(arg_tup);
+
     auto ret = f(std::get<idx>(arg_tup).get()...);
     type_utility<std::remove_cv_t<decltype(ret)> >::push(L, ret);
     return 1;
@@ -323,6 +323,9 @@ auto apply_stack_impl(
             std::tuple_element_t<idx,arg_tuple_t>,
             utils::with_index<idx, D> >(L, idx+1)
         ...);
+    // In case the argmentlist is empty, arg_tup may not be used.
+    static_cast<void>(arg_tup);
+
     f(std::get<idx>(arg_tup).get()...);
 
     return 0;
