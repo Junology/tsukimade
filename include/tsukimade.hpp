@@ -12,6 +12,7 @@
 #ifndef TSUKIMADE_MAIN_HEADER
 #define TSUKIMADE_MAIN_HEADER
 
+#include <tuple>
 #include <functional>
 #include <utility>
 #include <typeinfo>
@@ -23,7 +24,7 @@
 namespace tsukimade {
 
 /*!
- * Describing the correspondence between C fundamental types and Lua types.
+ * Assigning Lua types to C fundamental types.
  */
 template<class T>
 struct type_dictionary;
@@ -61,6 +62,7 @@ struct type_dictionary<double> { using type = lua_Number; };
 template<>
 struct type_dictionary<long double> { using type = lua_Number; };
 
+
 /*!
  * a function with arguments supllied from Lua stack.
  * \tparam F The type of functions, usually of the form R(*)(Args...)
@@ -75,20 +77,20 @@ int apply_stack(lua_State* L, F f);
 /*!
  * Generating prototypes of functions to communicate with Lua stacks.
  * \tparam T the target type.
- * \tparam Fto the function to read from the stack.
+ * \tparam Fcheck the function to read from the stack.
  * \tparam Fpush the function to write to the stack.
  */
 template<
     class T,
-    typename type_dictionary<T>::type(*Fto)(lua_State*,int),
+    typename type_dictionary<T>::type(*Fcheck)(lua_State*,int),
     void(*Fpush)(lua_State*,typename type_dictionary<T>::type)>
 struct type_utility_generic
 {
     using target_type = T;
 
-    static target_type to(lua_State* L, int i)
+    static target_type check(lua_State* L, int i)
     {
-        return static_cast<target_type>(Fto(L, i));
+        return static_cast<target_type>(Fcheck(L, i));
     }
 
     static void push(lua_State* L, target_type val)
@@ -99,7 +101,7 @@ struct type_utility_generic
 
 /*!
  * A set of functions to communicate with Lua stacks.
- * One can specialize this class to write functions to read/write a type of data from/to Lua stacks.
+ * One can specialize this class to write functions to interact with Lua stacks.
  * \tparam T The target type.
  */
 template<class T>
@@ -111,7 +113,7 @@ struct type_utility {
         return typeid(utils::annihilate_cv_t<T>).name();
     }
 
-    static target_type to(lua_State* L, int i) {
+    static target_type check(lua_State* L, int i) {
         target_type* retpp
             = static_cast<target_type*>(luaL_checkudata(L, i, tname()));
 
@@ -119,10 +121,11 @@ struct type_utility {
     }
 
     static void push(lua_State* L, target_type data) {
-        luaL_newmetatable(L, tname());
         target_type* p_luadata
             = static_cast<target_type*>(lua_newuserdata(L, sizeof(target_type)));
-        luaL_setmetatable(L, tname());
+        luaL_newmetatable(L, tname());
+        lua_setmetatable(L, -2);
+
         if(p_luadata)
             (*p_luadata) = data;
     }
@@ -134,9 +137,70 @@ struct type_utility<int>
 {};
 
 template<>
+struct type_utility<long int>
+    : type_utility_generic<long int, luaL_checkinteger, lua_pushinteger>
+{};
+
+template<>
+struct type_utility<long long int>
+    : type_utility_generic<long long int, luaL_checkinteger, lua_pushinteger>
+{};
+
+template<>
+struct type_utility<short int>
+    : type_utility_generic<short int, luaL_checkinteger, lua_pushinteger>
+{};
+
+template<>
+struct type_utility<unsigned int>
+    : type_utility_generic<unsigned int, luaL_checkunsigned, lua_pushunsigned>
+{};
+
+template<>
+struct type_utility<unsigned long int>
+    : type_utility_generic<unsigned long int, luaL_checkunsigned, lua_pushunsigned>
+{};
+
+template<>
+struct type_utility<unsigned long long int>
+    : type_utility_generic<unsigned long long int, luaL_checkunsigned, lua_pushunsigned>
+{};
+
+template<>
+struct type_utility<unsigned short int>
+    : type_utility_generic<unsigned short int, luaL_checkunsigned, lua_pushunsigned>
+{};
+
+template<>
+struct type_utility<float>
+    : type_utility_generic<float, luaL_checknumber, lua_pushnumber>
+{};
+
+template<>
 struct type_utility<double>
     : type_utility_generic<double, luaL_checknumber, lua_pushnumber>
 {};
+
+template<>
+struct type_utility<long double>
+    : type_utility_generic<long double, luaL_checknumber, lua_pushnumber>
+{};
+
+template<>
+struct type_utility<const char*>
+{
+    using target_type = const char*;
+
+    static target_type check(lua_State* L, int i)
+    {
+        return luaL_checkstring(L, i);
+    }
+
+    static void push(lua_State* L, target_type val)
+    {
+        lua_pushstring(L, val);
+    }
+};
 
 //! As for function types, no read function is realized.
 //! To pass them to C functions, use `arg_wrapper` or `apply_stack`.
@@ -172,7 +236,7 @@ public:
     using target_type = T;
 
     arg_wrapper(lua_State* L, int i)
-        : m_arg(type_utility<target_type>::to(L, i))
+        : m_arg(type_utility<target_type>::check(L, i))
     {}
 
     ~arg_wrapper() = default;
@@ -233,20 +297,26 @@ public:
     {
         return +[](Args... args) -> R {
             int oldtop = lua_gettop(m_Lstate);
+
+            // ensure there is enough room in the Lua stack.
+            lua_checkstack(m_Lstate, sizeof...(Args)+1);
+
             lua_rawgeti(m_Lstate, LUA_REGISTRYINDEX, m_reg_idx);
+
             auto dummy = {
                 (type_utility<Args>::push(m_Lstate, std::forward<Args>(args)),0)
                 ...
             };
-            static_cast<void>(dummy);
+            static_cast<volatile void>(dummy);
 
             if (lua_pcall(m_Lstate, sizeof...(Args), LUA_MULTRET, 0)) {
+                //! \todo Do not want to use std::cerr to handle error messages.
                 std::cerr << lua_tostring(m_Lstate, -1) << std::endl;
                 lua_pop(m_Lstate, 1);
                 return R();
             }
 
-            auto ret = type_utility<R>::to(m_Lstate, oldtop+1);
+            auto ret = type_utility<R>::check(m_Lstate, oldtop+1);
             lua_pop(m_Lstate, lua_gettop(m_Lstate)-oldtop);
             return ret;
         };
