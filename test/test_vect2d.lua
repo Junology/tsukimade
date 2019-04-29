@@ -1,7 +1,7 @@
 function makevec(x, y)
    local vec = {}
-   vec["x"] = x
-   vec["y"] = y
+   vec.x = x
+   vec.y = y
    return vec
 end
 
@@ -15,7 +15,7 @@ test = test and (veclib.norm(v) - 5.0 < 0.0001)
 
 -- Test gradient descent
 function f(v)
-   return math.sin(v["x"])*math.sin(v["y"])
+   return math.sin(v.x)*math.sin(v.y)
 end
 
 u = v
@@ -29,7 +29,7 @@ test = test and (f(u) > f(v))
 -- Write test result
 if test
 then
-   veclib.write_result(1)
+   write_result(1)
 else
-   veclib.write_result(0)
+   write_result(0)
 end

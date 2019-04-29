@@ -1,5 +1,5 @@
-#ifndef TEST_LIB_H
-#define TEST_LIB_H
+#ifndef TSUKIMADE_TEST_VECT2D_H
+#define TSUKIMADE_TEST_VECT2D_H
 
 //! 2-dimensional vectors.
 typedef struct {

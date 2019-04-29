@@ -1,10 +1,23 @@
+/*!
+ * \file test_list.cpp
+ * \brief A test with 2 dimensional vectors.
+ * \details
+ * The aim of the test is to verify the following functionality of the library:
+ * - to push and check struct data;
+ * - to receive Lua function.
+ *
+ * \copyright (c) 2019 Jun Yoshida.
+ * The project is released under MIT License.
+ * \date April 28, 2019: created
+ */
+
 #include <iostream>
 
 extern "C" {
-#include "testlib.h"
+#include "vect2d.h"
 }
 
-#include "tsukimade.hpp"
+#include "common.hpp"
 
 //! Specialize `tsukimade::type_utility` for `Vector2D`.
 template<>
@@ -12,7 +25,7 @@ struct tsukimade::type_utility<Vector2D>
 {
     using target_type = Vector2D;
 
-    static target_type to(lua_State* L, int i)
+    static target_type check(lua_State* L, int i)
     {
         if(lua_type(L, i) != LUA_TTABLE)
             throw std::bad_cast{};
@@ -20,17 +33,17 @@ struct tsukimade::type_utility<Vector2D>
         Vector2D result;
 
         lua_getfield(L, i, "x");
-        result.x = tsukimade::type_utility<double>::to(L, -1);
+        result.x = tsukimade::type_utility<double>::check(L, -1);
         lua_pop(L, 1);
 
         lua_getfield(L, i, "y");
-        result.y = tsukimade::type_utility<double>::to(L, -1);
+        result.y = tsukimade::type_utility<double>::check(L, -1);
         lua_pop(L, 1);
 
         return result;
     }
 
-    static target_type push(lua_State* L, target_type val)
+    static void push(lua_State* L, target_type val)
     {
         lua_newtable(L);
         lua_pushnumber(L, val.x);
@@ -40,15 +53,6 @@ struct tsukimade::type_utility<Vector2D>
         lua_setfield(L, -2, "y");
     }
 };
-
-#define REGISTER(f) {#f, tsukimade::fun_wrapper<decltype(f), f>}
-
-static int g_result = 0;
-
-void write_result(int res)
-{
-    g_result = res;
-}
 
 int main(int argc, char** argv)
 {
@@ -63,23 +67,16 @@ int main(int argc, char** argv)
         REGISTER(scalar_prod),
         REGISTER(norm),
         REGISTER(gradient),
-        REGISTER(write_result),
         {NULL, NULL} };
 
-    lua_State* L = luaL_newstate();
+    TestEnv env;
 
-    luaL_openlibs(L);
-    luaL_newlib(L, testlib);
-    lua_setglobal(L, "veclib");
+    env.register_library(testlib, "veclib");
 
-    int error = luaL_dofile(L, argv[1]);
+    int error = env.dofile(argv[1]);
 
-    if(error) {
-        std::cerr << "Error: " << lua_tostring(L, -1) << std::endl;
-        lua_pop(L, 1);
-    }
+    if(error)
+        std::cerr << "Error: " << env.get_errmsg() << std::endl;
 
-    lua_close(L);
-
-    return (!error && g_result) ? 0 : -1;
+    return env.get_result() ? 0 : -1;
 }
