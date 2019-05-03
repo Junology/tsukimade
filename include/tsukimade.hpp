@@ -420,6 +420,57 @@ int fun_wrapper(lua_State* L)
     return apply_stack<std::decay_t<F>,utils::singleton_type<F,f> >(L, f);
 }
 
+/************************************
+ *** Tools to exhibit enum to Lua ***
+ ************************************/
+/*!
+ * The data structure to represent an entry of an enum type
+ */
+template<class E,
+        class = std::enable_if_t<std::is_enum<E>::value> >
+struct enum_entry
+{
+    using type = E;
+    const char* name;
+    const E value;
+
+    constexpr enum_entry(const char* n, E val)
+      : name(n), value(val)
+    {}
+};
+
+/*!
+ * The implementaion of `push_enum_table` function.
+ */
+inline int push_enum_table_impl(lua_State*)
+{
+    return 1;
+}
+
+template<class D, class... Ds>
+inline int push_enum_table_impl(lua_State* L, D&& head, Ds&&... rem)
+{
+    lua_pushstring(L, head.name);
+    tsukimade::type_utility<typename std::remove_reference_t<D>::type>::push(L, head.value);
+    lua_settable(L, -3);
+
+    return push_enum_table_impl(L, rem...);
+}
+
+/*!
+ * The function pushing a table containing key-value pairs of an enum type.
+ */
+template<class... Ds>
+int push_enum_table(lua_State* L, Ds&&... entries)
+{
+    lua_createtable(L, 0, sizeof...(Ds));
+
+    return push_enum_table_impl(L, entries...);
+}
+
+//! Syntactic sugar
+#define MK_ENUMENTRY(v) enum_entry<std::remove_reference_t<decltype(v)> >(#v, v)
+
 } // namespace tsukimade
 
 #endif

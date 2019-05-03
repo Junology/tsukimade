@@ -22,6 +22,31 @@ extern "C" {
 
 #include "common.hpp"
 
+void reg_enum_Ordering(lua_State* L)
+{
+    // Create empty table
+    lua_newtable(L);
+
+    // Create metatable
+    lua_newtable(L);
+    lua_pushstring(L, "__index");
+    tsukimade::push_enum_table(
+        L,
+        tsukimade::MK_ENUMENTRY(LT),
+        tsukimade::MK_ENUMENTRY(GT),
+        tsukimade::MK_ENUMENTRY(EQ) );
+    lua_rawset(L, -3);
+    lua_pushstring(L, "__newindex");
+    lua_pushcfunction(L, lua_error);
+    lua_rawset(L, -3);
+    lua_pushstring(L, "__metatable");
+    lua_pushboolean(L, 0);
+    lua_rawset(L, -3);
+
+    lua_setmetatable(L, -2);
+    lua_setglobal(L, "Ordering");
+}
+
 simple_flist* create_empty_list()
 {
     return nullptr;
@@ -45,8 +70,8 @@ int main(int argc, char** argv)
         REGISTER(pop_back),
         REGISTER(destroy),
         REGISTER(filter),
-        REGISTER(compare_canonical),
-        REGISTER(compare_opposite),
+        REGISTER(order_canonical),
+        REGISTER(order_opposite),
         REGISTER(bubble_sort),
         REGISTER(get_median),
         {NULL, NULL} };
@@ -54,6 +79,7 @@ int main(int argc, char** argv)
     TestEnv env;
 
     env.register_library(testlib, "list");
+    reg_enum_Ordering(env.get_luastate());
 
     /* Basic test for list library */ {
         simple_flist* testlist = nullptr;
@@ -89,11 +115,11 @@ int main(int argc, char** argv)
                 throw __LINE__;
 
             testlist = push_back(testlist, 128);
-            testlist = bubble_sort(testlist, compare_opposite);
+            testlist = bubble_sort(testlist, order_opposite);
             if(get_value(testlist, 0) != 128)
                 throw __LINE__;
 
-            int med = get_median(testlist, compare_canonical, bubble_sort);
+            int med = get_median(testlist, order_canonical, bubble_sort);
             if(med != 5)
                 throw __LINE__;
         }
