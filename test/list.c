@@ -153,7 +153,7 @@ simple_flist* filter(simple_flist* head, condition_t p)
 /*************************************
  *** Build-in comparison functions ***
  *************************************/
-Comparison compare_canonical(int x, int y)
+Ordering order_canonical(int x, int y)
 {
     if(x==y)
         return EQ;
@@ -163,15 +163,15 @@ Comparison compare_canonical(int x, int y)
         return GT;
 }
 
-Comparison compare_opposite(int x, int y)
+Ordering order_opposite(int x, int y)
 {
-    return compare_canonical(y,x);
+    return order_canonical(y,x);
 }
 
 /*********************
  *** Build-in sort ***
  *********************/
-simple_flist* bubble_sort(simple_flist* oldhead, compare_func_t f)
+simple_flist* bubble_sort(simple_flist* oldhead, ordering_t f)
 {
     simple_flist dummy_head;
     simple_flist *iter, *tmp;
@@ -198,28 +198,20 @@ simple_flist* bubble_sort(simple_flist* oldhead, compare_func_t f)
             iter = iter->tail;
         }
     }
-/*
-    for(iter = dummy_head.tail; iter != NULL; iter = iter->tail) {
-        printf("%d\n", iter->value);
-    }
-*/
+
     return dummy_head.tail;
 }
 
 /************************
  *** Compute meridian ***
  ************************/
-int get_median(simple_flist* head, compare_func_t f, sort_algorithm_t sortalg)
+int get_median(simple_flist* head, ordering_t f, sort_algorithm_t sortalg)
 {
     simple_flist* sorted;
     int length = get_length(head);
     int result;
 
-    printf("Enter %s.\n", __func__);
-
     sorted = sortalg(copy(head), f);
-
-    printf("Sort finished with %p\n", sortalg);
 
     if(sorted == NULL) {
         result = 0;

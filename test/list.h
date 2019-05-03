@@ -36,19 +36,19 @@ typedef enum {
     EQ,
     LT,
     GT
-} Comparison;
+} Ordering;
 
-typedef Comparison (*compare_func_t)(int, int);
+typedef Ordering (*ordering_t)(int, int);
 
-Comparison compare_canonical(int x, int y);
-Comparison compare_opposite(int x, int y);
+Ordering order_canonical(int x, int y);
+Ordering order_opposite(int x, int y);
 
-typedef simple_flist* (*sort_algorithm_t)(simple_flist*, compare_func_t);
+typedef simple_flist* (*sort_algorithm_t)(simple_flist*, ordering_t);
 
-simple_flist* bubble_sort(simple_flist* oldhead, compare_func_t f);
+simple_flist* bubble_sort(simple_flist* oldhead, ordering_t f);
 
 
 // Compute meridian
-int get_median(simple_flist* head, compare_func_t f, sort_algorithm_t sortalg);
+int get_median(simple_flist* head, ordering_t f, sort_algorithm_t sortalg);
 
 #endif
